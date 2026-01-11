@@ -23,9 +23,12 @@ try:
 except ImportError:
     HAS_MUTAGEN = False
 
-def extract_cover(file_path, covers_dir):
+# 保存するフォルダ名を定義（隠しフォルダにしない）
+COVERS_DIR = "covers"
+
+def extract_cover(file_path, covers_dir_path):
     """
-    音楽ファイルからアートワークを抽出し、covers_dirに保存してそのパスを返す。
+    音楽ファイルからアートワークを抽出し、covers_dir_pathに保存してそのパスを返す。
     画像がない、またはエラーの場合は None を返す。
     """
     if not HAS_MUTAGEN:
@@ -60,15 +63,15 @@ def extract_cover(file_path, covers_dir):
 
         if image_data:
             cover_filename = f"{file_hash}{ext}"
-            cover_path = os.path.join(covers_dir, cover_filename)
+            cover_path = os.path.join(covers_dir_path, cover_filename)
             
             # すでに抽出済みならスキップ（高速化）
             if not os.path.exists(cover_path):
                 with open(cover_path, 'wb') as f:
                     f.write(image_data)
             
-            # HTMLから参照するための相対パスを返す
-            return f".covers/{cover_filename}"
+            # HTMLから参照するための相対パスを返す (COVERS_DIR定数を使用)
+            return f"{COVERS_DIR}/{cover_filename}"
 
     except Exception as e:
         print(f"Cover extract error ({os.path.basename(file_path)}): {e}")
@@ -104,10 +107,10 @@ def main():
         print(f"エラー: ディレクトリが見つかりません: {target_dir}")
         return
 
-    # カバー画像保存用フォルダ (.covers) を作成
-    covers_dir = os.path.join(target_dir, ".covers")
-    if HAS_MUTAGEN and not os.path.exists(covers_dir):
-        os.makedirs(covers_dir)
+    # カバー画像保存用フォルダを作成 (COVERS_DIR定数を使用)
+    covers_path = os.path.join(target_dir, COVERS_DIR)
+    if HAS_MUTAGEN and not os.path.exists(covers_path):
+        os.makedirs(covers_path)
 
     # スキャン
     supported_extensions = ('.m4a', '.mp3', '.aac', '.ogg', '.wav')
@@ -117,13 +120,14 @@ def main():
     print(f"対象フォルダ: {target_dir}")
     print(f"検出ファイル: {len(files)} 曲")
     if HAS_MUTAGEN:
-        print("アートワーク抽出中...")
+        print(f"アートワーク抽出中... (保存先: {COVERS_DIR}/)")
 
     # データ構築
     playlist_data = []
     for f in files:
         full_path = os.path.join(target_dir, f)
-        cover_rel_path = extract_cover(full_path, covers_dir)
+        # 修正: extract_cover に渡すパス変数を統一
+        cover_rel_path = extract_cover(full_path, covers_path)
         
         # JS側で扱いやすいオブジェクト構造にする
         playlist_data.append({
@@ -151,8 +155,6 @@ def main():
     except Exception as e:
         print(f"エラー (index.html): {e}")
         return
-
-
 
 if __name__ == "__main__":
     main()

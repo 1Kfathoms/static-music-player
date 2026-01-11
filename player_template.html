@@ -20,7 +20,7 @@
             --btn-size: 64px;
         }
 
-        * { box-sizing: border-box; outline: none; user-select: none; }
+        * { box-sizing: border-box; outline: none; user-select: none; -webkit-tap-highlight-color: transparent; }
 
         body {
             margin: 0; padding: 0; 
@@ -54,12 +54,12 @@
             height: 100%;
             overflow: hidden;
             justify-content: space-between;
+            transition: opacity 0.3s;
         }
 
         /* アートワークエリア */
         .art-container {
-            flex: 1; /* 余白を埋める */
-            min-height: 0; /* 縮小許可 */
+            flex: 1; min-height: 0;
             display: flex; justify-content: center; align-items: center;
             position: relative;
             margin-bottom: 1.5rem;
@@ -107,16 +107,16 @@
         .track-meta { font-size: 0.95rem; color: var(--text-sub); }
 
         .progress-group { display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: var(--text-sub); margin-bottom: 1rem; }
-        input[type=range] { flex: 1; -webkit-appearance: none; background: transparent; cursor: pointer; height: 5px; }
+        input[type=range] { flex: 1; -webkit-appearance: none; background: transparent; cursor: pointer; height: 5px; min-width: 0; }
         input[type=range]::-webkit-slider-runnable-track { height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: var(--accent); margin-top: -3.5px; transition: transform 0.1s; }
         input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.4); }
 
         .main-controls { display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-bottom: 1rem; }
-        .btn-s { background: none; border: none; color: var(--text-main); cursor: pointer; padding: 10px; border-radius: 50%; transition: 0.2s; opacity: 0.8; display: flex; flex-shrink: 0; }
+        .btn-s { background: none; border: none; color: var(--text-main); cursor: pointer; padding: 10px; border-radius: 50%; transition: 0.2s; opacity: 0.6; display: flex; flex-shrink: 0; justify-content: center; align-items: center; }
         .btn-s:hover { background: rgba(255,255,255,0.1); opacity: 1; }
-        .btn-s svg { width: 24px; height: 24px; fill: currentColor; }
         .btn-s.active { color: var(--accent); opacity: 1; }
+        .btn-s svg { width: 24px; height: 24px; fill: currentColor; }
 
         .btn-play {
             width: var(--btn-size); height: var(--btn-size); flex-shrink: 0;
@@ -127,16 +127,44 @@
         .btn-play:hover { transform: scale(1.05); background: var(--accent-hover); }
         .btn-play svg { width: 32px; height: 32px; fill: currentColor; }
 
-        .sub-controls { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; }
-        .vol-group { display: flex; align-items: center; gap: 8px; width: 120px; }
+        .sub-controls { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-top: 1px solid var(--glass-border); padding-top: 1rem; 
+            gap: 15px; /* 要素間の最低隙間 */
+        }
+        
+        .vol-group { 
+            display: flex; align-items: center; gap: 8px; 
+            /* 幅固定をやめてFlexで伸縮させる */
+            flex: 1 1 auto; 
+            max-width: 150px; /* 通常時の最大幅 */
+            min-width: 60px; /* 最小幅 */
+        }
+        
+        /* ボリュームスライダー自体も縮めるようにする */
+        .vol-group input[type=range] {
+            flex: 1; min-width: 30px; 
+        }
+
+        .right-controls { 
+            display: flex; gap: 10px; 
+            flex-shrink: 0; /* ボタン群は潰さない */
+        }
+
+        /* プレイリスト切り替えボタン（PiP用） */
+        #btnListToggle { display: none; }
+        /* リストから戻るボタン（PiP用） */
+        #btnBackToPlayer { display: none; margin-right: 10px; }
 
         /* --- プレイリストセクション --- */
         .playlist-section {
             background: rgba(0,0,0,0.2); 
             display: flex; flex-direction: column; 
             overflow: hidden;
+            border-left: 1px solid var(--glass-border);
         }
-        .pl-header { padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; font-weight: bold; }
+        .pl-header { padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; font-weight: bold; }
+        .pl-title-group { display: flex; align-items: center; }
         .pl-body { flex: 1; overflow-y: auto; padding: 10px; }
         
         .pl-item {
@@ -146,7 +174,7 @@
         }
         .pl-item:hover { background: rgba(255,255,255,0.05); }
         .pl-item.active { background: rgba(244, 63, 94, 0.15); color: #fff; font-weight: 700; }
-        .pl-thumb { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; background: #333; }
+        .pl-thumb { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; background: #333; flex-shrink: 0; }
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -155,6 +183,7 @@
         @media (max-width: 768px) {
             .app-container { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
             .player-section { border-right: none; border-bottom: 1px solid var(--glass-border); }
+            .playlist-section { border-left: none; }
         }
 
         /* --- PiP モード専用設定 --- */
@@ -167,63 +196,53 @@
 
         body.pip-root .player-section {
             width: 100%; flex: 1; 
-            border: none; padding: 10px 15px; /* 余白を少し詰める */
-            justify-content: center; align-items: center;
-            gap: 0;
+            border: none; padding: 10px 15px;
+            justify-content: center; align-items: center; gap: 0;
         }
 
-        /* アートワーク: 確実なサイズ確保 */
-        body.pip-root .art-container {
-            flex: 1; /* スペースがあれば広がる */
-            width: 100%;
-            min-height: 100px; /* 最小高さを確保 */
-            margin-bottom: 10px;
+        body.pip-root .playlist-section {
+            display: none; /* デフォルトは非表示 */
+            width: 100%; height: 100%;
+            background: transparent;
+            border: none;
         }
-        
-        body.pip-root .album-art, 
-        body.pip-root .pulse {
-            /* ビューポートの短い辺(vmin)の55%に強制設定。これにより「点」になるのを防ぐ */
-            width: 55vmin; height: 55vmin;
-            max-width: 250px; max-height: 250px;
-            aspect-ratio: 1/1;
-        }
+        /* PiPでのリスト表示モード */
+        body.pip-root.show-list .player-section { display: none; }
+        body.pip-root.show-list .playlist-section { display: flex; }
+        body.pip-root.show-list #btnBackToPlayer { display: flex; } /* 戻るボタン表示 */
 
-        /* コントロール周り */
-        body.pip-root .controls-container {
-            width: 100%; 
-            max-width: 320px; /* 横に広がりすぎないように制限 */
-        }
-        
+        body.pip-root #btnListToggle { display: flex; } /* PiPでのみ表示 */
+        body.pip-root #btnSort { display: none; } /* PiPではソート隠す */
+
+        /* PiP時の要素調整 */
+        body.pip-root .art-container { flex: 1; width: 100%; min-height: 80px; margin-bottom: 10px; }
+        body.pip-root .album-art, body.pip-root .pulse { width: 45vmin; height: 45vmin; max-width: 250px; max-height: 250px; }
+        body.pip-root .controls-container { width: 100%; max-width: 320px; }
         body.pip-root .track-name { font-size: 1.1rem; margin-bottom: 0; }
         body.pip-root .track-meta { font-size: 0.8rem; margin-bottom: 5px; }
-        
         body.pip-root .progress-group { margin-bottom: 5px; gap: 8px; }
-
-        /* ボタン配置: スペース均等割りで伸縮に対応 */
-        body.pip-root .main-controls { 
-            margin-bottom: 5px; 
-            gap: 0; /* 固定gapを廃止 */
-            justify-content: space-between; /* 両端揃えで間隔自動調整 */
-            width: 100%;
-            padding: 0 10px; /* 端に寄りすぎないように */
-        }
+        body.pip-root .main-controls { margin-bottom: 5px; gap: 0; justify-content: space-between; width: 100%; padding: 0 10px; }
+        body.pip-root .btn-play { width: 48px; height: 48px; }
+        body.pip-root .btn-s { padding: 8px; }
+        body.pip-root .btn-s svg { width: 20px; height: 20px; }
         
-        body.pip-root .btn-play { 
-            width: 50px; height: 50px; 
-        }
-        
-        body.pip-root .btn-s {
-            padding: 8px; /* パディングを減らす */
-        }
-        body.pip-root .btn-s svg {
-            width: 20px; height: 20px; /* アイコンを少し小さく */
-        }
-
         body.pip-root .sub-controls { 
             padding-top: 5px; border: none; 
-            justify-content: space-between;
+            /* 幅が狭い時は gap を詰める */
+            gap: 5px;
         }
-        body.pip-root .vol-group { width: 100px; gap: 4px; }
+        
+        body.pip-root .vol-group {
+            /* PiP時はさらに小さくなれるように設定 */
+            max-width: 120px;
+            min-width: 40px; /* 極端に狭くなっても最低限は確保 */
+        }
+        
+        body.pip-root .right-controls { 
+            gap: 0px; /* ボタン同士の間隔も詰める */
+        }
+        
+        body.pip-root .pl-header { padding: 10px; }
 
         /* オーバーレイ */
         #pip-overlay {
@@ -255,7 +274,7 @@
             <div class="pulse"></div>
             <div class="pulse"></div>
             <div class="album-art" id="elArt">
-                <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
             </div>
         </div>
 
@@ -272,14 +291,18 @@
             </div>
 
             <div class="main-controls">
-                <button class="btn-s" id="btnRepeat" title="Repeat"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"/></svg></button>
+                <button class="btn-s" id="btnShuffle" title="Shuffle Off"><svg viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
+                
                 <button class="btn-s" id="btnPrev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                
                 <button class="btn-play" id="btnPlay">
                     <svg id="iconPlay" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                     <svg id="iconPause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                 </button>
+                
                 <button class="btn-s" id="btnNext"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-                <button class="btn-s" id="btnSort" title="Sort"><svg viewBox="0 0 24 24"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg></button>
+                
+                <button class="btn-s" id="btnRepeat" title="No Repeat"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"/></svg></button>
             </div>
 
             <div class="sub-controls">
@@ -287,14 +310,24 @@
                     <button class="btn-s" id="btnMute" style="padding:4px;"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
                     <input type="range" id="elVol" min="0" max="1" step="0.01" value="1">
                 </div>
-                <button class="btn-s" id="btnPiP" title="Mini Player"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></button>
+                
+                <div class="right-controls">
+                    <button class="btn-s" id="btnListToggle" title="Show Playlist"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg></button>
+                    <button class="btn-s" id="btnSort" title="Sort Name"><svg viewBox="0 0 24 24"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg></button>
+                    <button class="btn-s" id="btnPiP" title="Mini Player"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="playlist-section">
+    <div class="playlist-section" id="playlistUI">
         <div class="pl-header">
-            <span>Playlist</span>
+            <div class="pl-title-group">
+                <button class="btn-s" id="btnBackToPlayer" title="Back to Player">
+                    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                </button>
+                <span>Playlist</span>
+            </div>
             <span id="elCount" style="font-weight:normal; opacity:0.7">0</span>
         </div>
         <div class="pl-body" id="elPlaylist"></div>
@@ -304,11 +337,15 @@
 <script src="playlist.js"></script>
 
 <script>
+    /* データ初期化 */
     let rawList = (typeof LOCAL_FILES !== 'undefined') ? LOCAL_FILES : [];
+    // JSオブジェクトとして扱うリスト
     let playlist = rawList.map(item => (typeof item === 'string') ? { name: item, url: item, cover: null } : item);
 
+    /* DOM要素取得 */
     const appRoot = document.getElementById('appRoot');
     const playerUI = document.getElementById('playerUI');
+    const playlistUI = document.getElementById('playlistUI'); // リストコンテナ全体
     const elPlaylist = document.getElementById('elPlaylist');
     
     const elArt = document.getElementById('elArt');
@@ -327,16 +364,25 @@
     const btnNext = document.getElementById('btnNext');
     const btnPrev = document.getElementById('btnPrev');
     const btnRepeat = document.getElementById('btnRepeat');
+    const btnShuffle = document.getElementById('btnShuffle');
     const btnSort = document.getElementById('btnSort');
     const btnMute = document.getElementById('btnMute');
     const btnPiP = document.getElementById('btnPiP');
+    
+    const btnListToggle = document.getElementById('btnListToggle');
+    const btnBackToPlayer = document.getElementById('btnBackToPlayer');
 
     const audio = new Audio(); audio.volume = 1;
+    
+    /* 状態管理 */
     let currentIndex = 0;
     let isPlaying = false;
     let isDragging = false;
-    let repeatMode = 1; 
-    let sortMode = 0;
+    
+    // 再生モード
+    let repeatMode = 0; // 0:なし, 1:全曲, 2:一曲
+    let isShuffle = false;
+    let sortMode = 0;   // 0:名前順, 1:逆順
 
     elCount.innerText = playlist.length;
     if (playlist.length > 0) {
@@ -344,6 +390,7 @@
         loadTrack(0, false);
     }
 
+    /* プレイリスト描画 */
     function renderList() {
         elPlaylist.innerHTML = '';
         playlist.forEach((track, idx) => {
@@ -352,11 +399,17 @@
             let imgHtml = `<div class="pl-thumb" style="display:flex;justify-content:center;align-items:center;"><svg viewBox="0 0 24 24" width="16" fill="#fff"><path d="M12 3v9.28a2.5 2.5 0 0 0-3.5 2.22 2.5 2.5 0 0 0 5 0V6h3V3h-4.5z"/></svg></div>`;
             if (track.cover) imgHtml = `<img src="${encodeURI(track.cover)}" class="pl-thumb">`;
             div.innerHTML = `${imgHtml}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${track.name.replace(/\.[^/.]+$/, "")}</span>`;
-            div.onclick = () => { currentIndex = idx; loadTrack(currentIndex, true); };
+            div.onclick = () => { 
+                currentIndex = idx; 
+                loadTrack(currentIndex, true); 
+                // PiPでリスト選択したらプレイヤーに戻る
+                if(pipWindow) togglePiPList(false);
+            };
             elPlaylist.appendChild(div);
         });
     }
 
+    /* 曲ロード */
     function loadTrack(idx, autoPlay) {
         if (idx < 0 || idx >= playlist.length) return;
         const track = playlist[idx];
@@ -367,6 +420,7 @@
         elMeta.innerText = `Track ${idx + 1} / ${playlist.length}`;
         elProgress.value = 0; elTimeNow.innerText = "00:00";
         
+        // アートワーク
         if (track.cover) {
             elArt.style.backgroundImage = `url('${encodeURI(track.cover)}')`;
             elArt.classList.add('has-image');
@@ -375,14 +429,24 @@
             elArt.classList.remove('has-image');
         }
         
+        // リストのアクティブ表示更新
         Array.from(elPlaylist.children).forEach((child, i) => {
             child.classList.toggle('active', i === idx);
             if(i === idx) child.scrollIntoView({ behavior:'smooth', block:'nearest' });
         });
+        
+        // メタデータ更新（PiP含む）
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.name.replace(/\.[^/.]+$/, ""),
+                artwork: track.cover ? [{ src: track.cover, sizes: '512x512', type: 'image/jpeg' }] : []
+            });
+        }
 
         if (autoPlay) togglePlay(true);
     }
 
+    /* 再生制御 */
     function togglePlay(forcePlay) {
         if (typeof forcePlay === 'boolean') {
             if (forcePlay) audio.play().then(() => setPlayState(true)).catch(e=>console.log(e));
@@ -397,21 +461,54 @@
         isPlaying = state;
         iconPlay.style.display = state ? 'none' : 'block';
         iconPause.style.display = state ? 'block' : 'none';
-        if (state) document.body.classList.add('playing');
-        else document.body.classList.remove('playing');
-        if(pipWindow) {
-            if(state) pipWindow.document.body.classList.add('playing');
-            else pipWindow.document.body.classList.remove('playing');
-        }
+        
+        const bodyClass = state ? 'add' : 'remove';
+        document.body.classList[bodyClass]('playing');
+        if(pipWindow) pipWindow.document.body.classList[bodyClass]('playing');
     }
 
+    /* 次のインデックス計算 */
+    function getNextIndex() {
+        if (isShuffle) {
+            // 単純ランダム
+            return Math.floor(Math.random() * playlist.length);
+        }
+        let next = currentIndex + 1;
+        if (next >= playlist.length) {
+            // リストの最後に来た場合
+            if (repeatMode === 1) return 0; // 全曲リピートなら先頭へ
+            else return -1; // なしなら停止指示
+        }
+        return next;
+    }
+
+    /* イベントリスナー */
     btnPlay.onclick = () => togglePlay();
-    btnNext.onclick = () => { currentIndex = (currentIndex + 1) % playlist.length; loadTrack(currentIndex, true); };
-    btnPrev.onclick = () => { 
-        if(audio.currentTime > 3) audio.currentTime = 0; 
-        else { currentIndex = (currentIndex - 1 + playlist.length) % playlist.length; loadTrack(currentIndex, true); }
+    
+    btnNext.onclick = () => {
+        const next = getNextIndex();
+        if (next !== -1) {
+            currentIndex = next;
+            loadTrack(currentIndex, true);
+        } else {
+            // リピートなしで最後の曲が終わった、または手動スキップで最後
+            // 先頭に戻して停止状態にするか、あるいは最後の曲で止めるか。ここは先頭へループさせて停止にする
+            currentIndex = 0;
+            loadTrack(currentIndex, false); 
+        }
     };
 
+    btnPrev.onclick = () => { 
+        if(audio.currentTime > 3) {
+            audio.currentTime = 0; 
+        } else {
+            // 前の曲へ。シャッフル中でもリスト上の前へ戻る仕様とする（履歴管理が複雑になるため）
+            currentIndex = (currentIndex - 1 + playlist.length) % playlist.length; 
+            loadTrack(currentIndex, true); 
+        }
+    };
+
+    /* オーディオイベント */
     audio.ontimeupdate = () => {
         if(!isDragging) elProgress.value = audio.currentTime;
         elTimeNow.innerText = fmtTime(audio.currentTime);
@@ -420,31 +517,65 @@
         elProgress.max = audio.duration;
         elTimeTotal.innerText = fmtTime(audio.duration);
     };
+    
+    // 曲終了時の処理
     audio.onended = () => {
-        if(repeatMode===2) { audio.currentTime=0; togglePlay(true); }
-        else if(currentIndex < playlist.length - 1) { currentIndex++; loadTrack(currentIndex, true); }
-        else if(repeatMode===1) { currentIndex=0; loadTrack(currentIndex, true); }
-        else togglePlay(false);
+        if (repeatMode === 2) {
+            // 1曲リピート
+            audio.currentTime = 0; 
+            togglePlay(true);
+        } else {
+            // 次の曲へ
+            const next = getNextIndex();
+            if (next !== -1) {
+                currentIndex = next;
+                loadTrack(currentIndex, true);
+            } else {
+                // 再生終了
+                togglePlay(false);
+            }
+        }
     };
 
     elProgress.oninput = () => { isDragging = true; elTimeNow.innerText = fmtTime(elProgress.value); };
     elProgress.onchange = () => { isDragging = false; audio.currentTime = elProgress.value; };
     elVol.oninput = (e) => audio.volume = e.target.value;
 
+    /* モード切替ボタン */
+    
+    // リピート: なし(0) -> 全曲(1) -> 1曲(2)
     btnRepeat.onclick = () => {
         repeatMode = (repeatMode + 1) % 3;
-        btnRepeat.style.color = (repeatMode !== 0) ? 'var(--accent)' : 'var(--text-main)';
-        btnRepeat.title = ["No Repeat", "Loop All", "Loop One"][repeatMode];
+        const states = [
+            { icon: '<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"/>', active: false, title:"No Repeat" }, // なし
+            { icon: '<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"/>', active: true, title:"Repeat All" }, // 全曲
+            { icon: '<path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"/><text x="10" y="16" font-size="8" fill="currentColor" font-weight="bold">1</text>', active: true, title:"Repeat One" } // 1曲
+        ];
+        const s = states[repeatMode];
+        btnRepeat.innerHTML = `<svg viewBox="0 0 24 24">${s.icon}</svg>`;
+        btnRepeat.classList.toggle('active', s.active);
+        btnRepeat.title = s.title;
+    };
+
+    // シャッフル: Off -> On
+    btnShuffle.onclick = () => {
+        isShuffle = !isShuffle;
+        btnShuffle.classList.toggle('active', isShuffle);
+        btnShuffle.title = isShuffle ? "Shuffle On" : "Shuffle Off";
     };
     
+    // ソート: 名前順(0) -> 逆順(1)
     btnSort.onclick = () => {
-        sortMode = (sortMode + 1) % 3;
+        sortMode = (sortMode + 1) % 2;
         const curName = playlist[currentIndex].name;
+        
         if(sortMode===0) playlist.sort((a,b)=>a.name.localeCompare(b.name));
-        else if(sortMode===1) playlist.sort((a,b)=>b.name.localeCompare(a.name));
-        else playlist.sort(() => Math.random() - 0.5);
+        else playlist.sort((a,b)=>b.name.localeCompare(a.name));
+        
+        // 再生中の曲の位置を再検索
         currentIndex = playlist.findIndex(t=>t.name===curName);
         renderList();
+        btnSort.title = sortMode === 0 ? "Sort Asc" : "Sort Desc";
     };
 
     function fmtTime(s) {
@@ -452,15 +583,17 @@
         return new Date(s * 1000).toISOString().substr(14, 5);
     }
 
-    // --- PiP Logic ---
+    /* --- PiP Logic --- */
     let pipWindow = null;
 
     async function openPiP() {
         if (!window.documentPictureInPicture) return alert("PiP未対応のブラウザです");
         
         try {
-            pipWindow = await window.documentPictureInPicture.requestWindow({ width: 320, height: 380 });
+            // PiPウィンドウ作成
+            pipWindow = await window.documentPictureInPicture.requestWindow({ width: 235, height: 365 });
             
+            // スタイルコピー
             [...document.styleSheets].forEach(sheet => {
                 try {
                     const style = document.createElement("style");
@@ -469,29 +602,55 @@
                 } catch(e) {}
             });
 
+            // PiP用クラス付与
             pipWindow.document.body.classList.add('pip-root');
             if(isPlaying) pipWindow.document.body.classList.add('playing');
             
-            // プレイヤーUIを移動
+            // DOM移動: プレイヤーとリストの両方をPiPへ
             pipWindow.document.body.appendChild(playerUI);
+            pipWindow.document.body.appendChild(playlistUI);
+            
+            // 本体側に「PiP中」表示
             document.body.classList.add('pip-active');
 
+            // 閉じた時の処理
             pipWindow.addEventListener("pagehide", () => {
                 closePiP();
             });
+
+            // PiP内専用ボタンのイベントハンドリング
+            const piListBtn = pipWindow.document.getElementById('btnListToggle');
+            if(piListBtn) piListBtn.onclick = () => togglePiPList();
+
+            const piBackBtn = pipWindow.document.getElementById('btnBackToPlayer');
+            if(piBackBtn) piBackBtn.onclick = () => togglePiPList(false);
+
         } catch (err) { console.error(err); }
     }
 
     function closePiP() {
         if (!pipWindow && !document.body.classList.contains('pip-active')) return;
         
-        if (!appRoot.contains(playerUI)) {
-            appRoot.prepend(playerUI);
-        }
+        // DOMを本体に戻す
+        if (!appRoot.contains(playerUI)) appRoot.appendChild(playerUI);
+        if (!appRoot.contains(playlistUI)) appRoot.appendChild(playlistUI);
+
         document.body.classList.remove('pip-active');
+        
         if (pipWindow) {
             pipWindow.close();
             pipWindow = null;
+        }
+    }
+
+    // PiP内でのリスト表示切り替え
+    function togglePiPList(forceShow) {
+        if(!pipWindow) return;
+        if(typeof forceShow === 'boolean') {
+            if(forceShow) pipWindow.document.body.classList.add('show-list');
+            else pipWindow.document.body.classList.remove('show-list');
+        } else {
+            pipWindow.document.body.classList.toggle('show-list');
         }
     }
 
@@ -499,6 +658,11 @@
         if (pipWindow) closePiP();
         else openPiP();
     };
+    
+    // 本体側でのクリック（念のため）
+    btnListToggle.onclick = () => { if(pipWindow) togglePiPList(); }
+    btnBackToPlayer.onclick = () => { if(pipWindow) togglePiPList(false); }
+
 </script>
 </body>
 </html>

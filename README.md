@@ -60,7 +60,17 @@ python generate.py "/home/user/Music"
 
 - `index.html` - 音楽プレイヤー本体
 - `playlist.js` - プレイリストデータ
-- `.covers/` - 抽出されたアルバムアート画像（フォルダ）
+- `covers/` - 抽出されたアルバムアート画像（フォルダ）
+
+---
+
+生成されるファイル（音楽フォルダ内）:
+├── index.html            # プレイヤー本体
+├── playlist.js           # プレイリストデータ
+└── covers/               # アルバムアート画像
+    ├── <hash1>.jpg
+    ├── <hash2>.jpg
+    └── ...
 
 生成された `index.html` をブラウザで開いて使用してください。
 
@@ -107,7 +117,7 @@ MusicPlayer/
 生成されるファイル（音楽フォルダ内）:
 ├── index.html            # プレイヤー本体
 ├── playlist.js           # プレイリストデータ
-└── .covers/              # アルバムアート画像
+└── covers/               # アルバムアート画像
     ├── <hash1>.jpg
     ├── <hash2>.jpg
     └── ...
@@ -131,7 +141,7 @@ const LOCAL_FILES = [
   {
     "name": "曲名.mp3",
     "url": "曲名.mp3",
-    "cover": ".covers/abc123def456.jpg"
+    "cover": "covers/abc123def456.jpg"
   },
   ...
 ];

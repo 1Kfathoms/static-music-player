@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Player</title>
+    <style>
+        :root {
+            /* 配色テーマ */
+            --bg-gradient: linear-gradient(135deg, #111827 0%, #3a1c2e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-sub: #a1a1aa;
+            --accent: #f43f5e;
+            --accent-hover: #e11d48;
+            
+            /* サイズ変数 */
+            --art-size: 240px; 
+            --btn-size: 64px;
+        }
+
+        * { box-sizing: border-box; outline: none; user-select: none; }
+
+        body {
+            margin: 0; padding: 0; 
+            background: var(--bg-gradient);
+            color: var(--text-main); 
+            font-family: 'Segoe UI', sans-serif;
+            height: 100vh; 
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- メインコンテナ --- */
+        .app-container {
+            width: 95%; max-width: 1100px; height: 90vh;
+            background: var(--glass-bg); 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            overflow: hidden;
+        }
+
+        /* --- プレイヤーセクション --- */
+        .player-section {
+            padding: 2.5rem;
+            display: flex; flex-direction: column;
+            border-right: 1px solid var(--glass-border);
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            justify-content: space-between;
+        }
+
+        /* アートワークエリア */
+        .art-container {
+            flex: 1; /* 余白を埋める */
+            min-height: 0; /* 縮小許可 */
+            display: flex; justify-content: center; align-items: center;
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .album-art {
+            width: 100%; height: 100%; 
+            max-width: var(--art-size); max-height: var(--art-size);
+            aspect-ratio: 1/1;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #222, #000);
+            background-size: cover; background-position: center;
+            border: 3px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2;
+            transition: transform 0.5s ease;
+        }
+        
+        .album-art svg { width: 40%; height: 40%; fill: var(--text-sub); }
+        .album-art.has-image svg { display: none; }
+        .playing .album-art { animation: rotateArt 25s linear infinite; }
+        @keyframes rotateArt { 100% { transform: rotate(360deg); } }
+
+        .pulse {
+            position: absolute; border-radius: 50%;
+            border: 2px solid var(--accent); opacity: 0; z-index: 1;
+            width: 100%; height: 100%; 
+            max-width: var(--art-size); max-height: var(--art-size);
+            aspect-ratio: 1/1;
+            pointer-events: none;
+        }
+        .playing .pulse { animation: pulseAnim 2.5s infinite; }
+        .playing .pulse:nth-child(2) { animation-delay: 0.8s; }
+        @keyframes pulseAnim { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.6); opacity: 0; } }
+
+        /* コントロールエリア */
+        .controls-container {
+            flex-shrink: 0; width: 100%;
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+
+        .info-group { text-align: center; margin-bottom: 0.5rem; }
+        .track-name { font-size: 1.6rem; font-weight: 700; color: #fff; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-meta { font-size: 0.95rem; color: var(--text-sub); }
+
+        .progress-group { display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: var(--text-sub); margin-bottom: 1rem; }
+        input[type=range] { flex: 1; -webkit-appearance: none; background: transparent; cursor: pointer; height: 5px; }
+        input[type=range]::-webkit-slider-runnable-track { height: 5px; background: rgba(255,255,255,0.15); border-radius: 3px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: var(--accent); margin-top: -3.5px; transition: transform 0.1s; }
+        input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.4); }
+
+        .main-controls { display: flex; justify-content: center; align-items: center; gap: 1.5rem; margin-bottom: 1rem; }
+        .btn-s { background: none; border: none; color: var(--text-main); cursor: pointer; padding: 10px; border-radius: 50%; transition: 0.2s; opacity: 0.8; display: flex; flex-shrink: 0; }
+        .btn-s:hover { background: rgba(255,255,255,0.1); opacity: 1; }
+        .btn-s svg { width: 24px; height: 24px; fill: currentColor; }
+        .btn-s.active { color: var(--accent); opacity: 1; }
+
+        .btn-play {
+            width: var(--btn-size); height: var(--btn-size); flex-shrink: 0;
+            border-radius: 50%; background: var(--accent); border: none; color: #fff;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 5px 20px rgba(244, 63, 94, 0.4); transition: transform 0.2s;
+        }
+        .btn-play:hover { transform: scale(1.05); background: var(--accent-hover); }
+        .btn-play svg { width: 32px; height: 32px; fill: currentColor; }
+
+        .sub-controls { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; }
+        .vol-group { display: flex; align-items: center; gap: 8px; width: 120px; }
+
+        /* --- プレイリストセクション --- */
+        .playlist-section {
+            background: rgba(0,0,0,0.2); 
+            display: flex; flex-direction: column; 
+            overflow: hidden;
+        }
+        .pl-header { padding: 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; font-weight: bold; }
+        .pl-body { flex: 1; overflow-y: auto; padding: 10px; }
+        
+        .pl-item {
+            padding: 12px; margin-bottom: 4px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.7); font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .pl-item:hover { background: rgba(255,255,255,0.05); }
+        .pl-item.active { background: rgba(244, 63, 94, 0.15); color: #fff; font-weight: 700; }
+        .pl-thumb { width: 32px; height: 32px; border-radius: 4px; object-fit: cover; background: #333; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        @media (max-width: 768px) {
+            .app-container { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+            .player-section { border-right: none; border-bottom: 1px solid var(--glass-border); }
+        }
+
+        /* --- PiP モード専用設定 --- */
+        body.pip-root {
+            margin: 0; padding: 0; 
+            width: 100vw; height: 100vh;
+            background: var(--bg-gradient);
+            display: flex; flex-direction: column;
+        }
+
+        body.pip-root .player-section {
+            width: 100%; flex: 1; 
+            border: none; padding: 10px 15px; /* 余白を少し詰める */
+            justify-content: center; align-items: center;
+            gap: 0;
+        }
+
+        /* アートワーク: 確実なサイズ確保 */
+        body.pip-root .art-container {
+            flex: 1; /* スペースがあれば広がる */
+            width: 100%;
+            min-height: 100px; /* 最小高さを確保 */
+            margin-bottom: 10px;
+        }
+        
+        body.pip-root .album-art, 
+        body.pip-root .pulse {
+            /* ビューポートの短い辺(vmin)の55%に強制設定。これにより「点」になるのを防ぐ */
+            width: 55vmin; height: 55vmin;
+            max-width: 250px; max-height: 250px;
+            aspect-ratio: 1/1;
+        }
+
+        /* コントロール周り */
+        body.pip-root .controls-container {
+            width: 100%; 
+            max-width: 320px; /* 横に広がりすぎないように制限 */
+        }
+        
+        body.pip-root .track-name { font-size: 1.1rem; margin-bottom: 0; }
+        body.pip-root .track-meta { font-size: 0.8rem; margin-bottom: 5px; }
+        
+        body.pip-root .progress-group { margin-bottom: 5px; gap: 8px; }
+
+        /* ボタン配置: スペース均等割りで伸縮に対応 */
+        body.pip-root .main-controls { 
+            margin-bottom: 5px; 
+            gap: 0; /* 固定gapを廃止 */
+            justify-content: space-between; /* 両端揃えで間隔自動調整 */
+            width: 100%;
+            padding: 0 10px; /* 端に寄りすぎないように */
+        }
+        
+        body.pip-root .btn-play { 
+            width: 50px; height: 50px; 
+        }
+        
+        body.pip-root .btn-s {
+            padding: 8px; /* パディングを減らす */
+        }
+        body.pip-root .btn-s svg {
+            width: 20px; height: 20px; /* アイコンを少し小さく */
+        }
+
+        body.pip-root .sub-controls { 
+            padding-top: 5px; border: none; 
+            justify-content: space-between;
+        }
+        body.pip-root .vol-group { width: 100px; gap: 4px; }
+
+        /* オーバーレイ */
+        #pip-overlay {
+            display: none; 
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            flex-direction: column; justify-content: center; align-items: center;
+            color: #aaa; text-align: center;
+        }
+        body.pip-active #pip-overlay { display: flex; }
+    </style>
+</head>
+<body>
+
+<div id="pip-overlay">
+    <svg viewBox="0 0 24 24" width="64" height="64" fill="currentColor" style="opacity:0.5; margin-bottom:1rem;">
+        <path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/>
+    </svg>
+    <h2>Mini Player Active</h2>
+    <button onclick="closePiP()" class="btn-play" style="width:auto; height:auto; padding:10px 20px; border-radius:20px; margin-top:20px; font-size:0.9rem;">
+        Restore
+    </button>
+</div>
+
+<div class="app-container" id="appRoot">
+    <div class="player-section" id="playerUI">
+        <div class="art-container">
+            <div class="pulse"></div>
+            <div class="pulse"></div>
+            <div class="album-art" id="elArt">
+                <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+            </div>
+        </div>
+
+        <div class="controls-container">
+            <div class="info-group">
+                <div class="track-name" id="elTitle">No Track</div>
+                <div class="track-meta" id="elMeta">Ready</div>
+            </div>
+
+            <div class="progress-group">
+                <span id="elTimeNow">00:00</span>
+                <input type="range" id="elProgress" value="0" min="0" max="100" step="0.1">
+                <span id="elTimeTotal">00:00</span>
+            </div>
+
+            <div class="main-controls">
+                <button class="btn-s" id="btnRepeat" title="Repeat"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"/></svg></button>
+                <button class="btn-s" id="btnPrev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                <button class="btn-play" id="btnPlay">
+                    <svg id="iconPlay" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="iconPause" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+                <button class="btn-s" id="btnNext"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                <button class="btn-s" id="btnSort" title="Sort"><svg viewBox="0 0 24 24"><path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/></svg></button>
+            </div>
+
+            <div class="sub-controls">
+                <div class="vol-group">
+                    <button class="btn-s" id="btnMute" style="padding:4px;"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></button>
+                    <input type="range" id="elVol" min="0" max="1" step="0.01" value="1">
+                </div>
+                <button class="btn-s" id="btnPiP" title="Mini Player"><svg viewBox="0 0 24 24"><path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z"/></svg></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="playlist-section">
+        <div class="pl-header">
+            <span>Playlist</span>
+            <span id="elCount" style="font-weight:normal; opacity:0.7">0</span>
+        </div>
+        <div class="pl-body" id="elPlaylist"></div>
+    </div>
+</div>
+
+<script src="playlist.js"></script>
+
+<script>
+    let rawList = (typeof LOCAL_FILES !== 'undefined') ? LOCAL_FILES : [];
+    let playlist = rawList.map(item => (typeof item === 'string') ? { name: item, url: item, cover: null } : item);
+
+    const appRoot = document.getElementById('appRoot');
+    const playerUI = document.getElementById('playerUI');
+    const elPlaylist = document.getElementById('elPlaylist');
+    
+    const elArt = document.getElementById('elArt');
+    const elTitle = document.getElementById('elTitle');
+    const elMeta = document.getElementById('elMeta');
+    const elCount = document.getElementById('elCount');
+    
+    const elProgress = document.getElementById('elProgress');
+    const elTimeNow = document.getElementById('elTimeNow');
+    const elTimeTotal = document.getElementById('elTimeTotal');
+    const elVol = document.getElementById('elVol');
+    
+    const btnPlay = document.getElementById('btnPlay');
+    const iconPlay = document.getElementById('iconPlay');
+    const iconPause = document.getElementById('iconPause');
+    const btnNext = document.getElementById('btnNext');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnRepeat = document.getElementById('btnRepeat');
+    const btnSort = document.getElementById('btnSort');
+    const btnMute = document.getElementById('btnMute');
+    const btnPiP = document.getElementById('btnPiP');
+
+    const audio = new Audio(); audio.volume = 1;
+    let currentIndex = 0;
+    let isPlaying = false;
+    let isDragging = false;
+    let repeatMode = 1; 
+    let sortMode = 0;
+
+    elCount.innerText = playlist.length;
+    if (playlist.length > 0) {
+        renderList();
+        loadTrack(0, false);
+    }
+
+    function renderList() {
+        elPlaylist.innerHTML = '';
+        playlist.forEach((track, idx) => {
+            const div = document.createElement('div');
+            div.className = `pl-item ${idx === currentIndex ? 'active' : ''}`;
+            let imgHtml = `<div class="pl-thumb" style="display:flex;justify-content:center;align-items:center;"><svg viewBox="0 0 24 24" width="16" fill="#fff"><path d="M12 3v9.28a2.5 2.5 0 0 0-3.5 2.22 2.5 2.5 0 0 0 5 0V6h3V3h-4.5z"/></svg></div>`;
+            if (track.cover) imgHtml = `<img src="${encodeURI(track.cover)}" class="pl-thumb">`;
+            div.innerHTML = `${imgHtml}<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${track.name.replace(/\.[^/.]+$/, "")}</span>`;
+            div.onclick = () => { currentIndex = idx; loadTrack(currentIndex, true); };
+            elPlaylist.appendChild(div);
+        });
+    }
+
+    function loadTrack(idx, autoPlay) {
+        if (idx < 0 || idx >= playlist.length) return;
+        const track = playlist[idx];
+        audio.src = encodeURIComponent(track.url);
+        audio.load();
+        
+        elTitle.innerText = track.name.replace(/\.[^/.]+$/, "");
+        elMeta.innerText = `Track ${idx + 1} / ${playlist.length}`;
+        elProgress.value = 0; elTimeNow.innerText = "00:00";
+        
+        if (track.cover) {
+            elArt.style.backgroundImage = `url('${encodeURI(track.cover)}')`;
+            elArt.classList.add('has-image');
+        } else {
+            elArt.style.backgroundImage = 'none';
+            elArt.classList.remove('has-image');
+        }
+        
+        Array.from(elPlaylist.children).forEach((child, i) => {
+            child.classList.toggle('active', i === idx);
+            if(i === idx) child.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        });
+
+        if (autoPlay) togglePlay(true);
+    }
+
+    function togglePlay(forcePlay) {
+        if (typeof forcePlay === 'boolean') {
+            if (forcePlay) audio.play().then(() => setPlayState(true)).catch(e=>console.log(e));
+            else { audio.pause(); setPlayState(false); }
+        } else {
+            if (isPlaying) { audio.pause(); setPlayState(false); }
+            else audio.play().then(() => setPlayState(true)).catch(e=>console.log(e));
+        }
+    }
+
+    function setPlayState(state) {
+        isPlaying = state;
+        iconPlay.style.display = state ? 'none' : 'block';
+        iconPause.style.display = state ? 'block' : 'none';
+        if (state) document.body.classList.add('playing');
+        else document.body.classList.remove('playing');
+        if(pipWindow) {
+            if(state) pipWindow.document.body.classList.add('playing');
+            else pipWindow.document.body.classList.remove('playing');
+        }
+    }
+
+    btnPlay.onclick = () => togglePlay();
+    btnNext.onclick = () => { currentIndex = (currentIndex + 1) % playlist.length; loadTrack(currentIndex, true); };
+    btnPrev.onclick = () => { 
+        if(audio.currentTime > 3) audio.currentTime = 0; 
+        else { currentIndex = (currentIndex - 1 + playlist.length) % playlist.length; loadTrack(currentIndex, true); }
+    };
+
+    audio.ontimeupdate = () => {
+        if(!isDragging) elProgress.value = audio.currentTime;
+        elTimeNow.innerText = fmtTime(audio.currentTime);
+    };
+    audio.onloadedmetadata = () => {
+        elProgress.max = audio.duration;
+        elTimeTotal.innerText = fmtTime(audio.duration);
+    };
+    audio.onended = () => {
+        if(repeatMode===2) { audio.currentTime=0; togglePlay(true); }
+        else if(currentIndex < playlist.length - 1) { currentIndex++; loadTrack(currentIndex, true); }
+        else if(repeatMode===1) { currentIndex=0; loadTrack(currentIndex, true); }
+        else togglePlay(false);
+    };
+
+    elProgress.oninput = () => { isDragging = true; elTimeNow.innerText = fmtTime(elProgress.value); };
+    elProgress.onchange = () => { isDragging = false; audio.currentTime = elProgress.value; };
+    elVol.oninput = (e) => audio.volume = e.target.value;
+
+    btnRepeat.onclick = () => {
+        repeatMode = (repeatMode + 1) % 3;
+        btnRepeat.style.color = (repeatMode !== 0) ? 'var(--accent)' : 'var(--text-main)';
+        btnRepeat.title = ["No Repeat", "Loop All", "Loop One"][repeatMode];
+    };
+    
+    btnSort.onclick = () => {
+        sortMode = (sortMode + 1) % 3;
+        const curName = playlist[currentIndex].name;
+        if(sortMode===0) playlist.sort((a,b)=>a.name.localeCompare(b.name));
+        else if(sortMode===1) playlist.sort((a,b)=>b.name.localeCompare(a.name));
+        else playlist.sort(() => Math.random() - 0.5);
+        currentIndex = playlist.findIndex(t=>t.name===curName);
+        renderList();
+    };
+
+    function fmtTime(s) {
+        if(!s || isNaN(s)) return "00:00";
+        return new Date(s * 1000).toISOString().substr(14, 5);
+    }
+
+    // --- PiP Logic ---
+    let pipWindow = null;
+
+    async function openPiP() {
+        if (!window.documentPictureInPicture) return alert("PiP未対応のブラウザです");
+        
+        try {
+            pipWindow = await window.documentPictureInPicture.requestWindow({ width: 320, height: 380 });
+            
+            [...document.styleSheets].forEach(sheet => {
+                try {
+                    const style = document.createElement("style");
+                    style.textContent = [...sheet.cssRules].map(r => r.cssText).join("");
+                    pipWindow.document.head.appendChild(style);
+                } catch(e) {}
+            });
+
+            pipWindow.document.body.classList.add('pip-root');
+            if(isPlaying) pipWindow.document.body.classList.add('playing');
+            
+            // プレイヤーUIを移動
+            pipWindow.document.body.appendChild(playerUI);
+            document.body.classList.add('pip-active');
+
+            pipWindow.addEventListener("pagehide", () => {
+                closePiP();
+            });
+        } catch (err) { console.error(err); }
+    }
+
+    function closePiP() {
+        if (!pipWindow && !document.body.classList.contains('pip-active')) return;
+        
+        if (!appRoot.contains(playerUI)) {
+            appRoot.prepend(playerUI);
+        }
+        document.body.classList.remove('pip-active');
+        if (pipWindow) {
+            pipWindow.close();
+            pipWindow = null;
+        }
+    }
+
+    btnPiP.onclick = () => {
+        if (pipWindow) closePiP();
+        else openPiP();
+    };
+</script>
+</body>
+</html>
